@@ -8,7 +8,8 @@ st.set_page_config(
     layout="wide"
 )
 st.title("💰EXPENSIVE TRACKER")
-opt=st.sidebar.selectbox("choose operations:--",["add_expression","view_expression","update_expression","delete_expression","search_expression","sort_expression"])
+opt=st.sidebar.selectbox("choose operations:--",["add_expression","view_expression","update_expression","delete_expression","search_expression","sort_expression" ,"filter_expression",
+        "analyze_spending"])
 if opt == "add_expression":
     st.header("➕ ADDING EXPENSES")
     with st.form("add_expression"):
@@ -194,6 +195,92 @@ elif opt== "sort_expression":
             else:
 
                 st.error("❌ Sorting Failed")
+
+        except requests.exceptions.ConnectionError:
+
+            st.error("🚫 Unable to connect to FastAPI Server")
+elif opt == "filter_expression":
+
+    st.header("🔍 FILTER EXPENSES")
+
+    category = st.selectbox(
+        "📂 Select Category",
+        [
+            "🍔 Food",
+            "✈️ Travel",
+            "🏠 Rent",
+            "👕 Costume"
+        ]
+    )
+
+    if st.button("Filter Expenses"):
+
+        try:
+
+            response = requests.get(
+                f"{server_loc}/filter_exp/{category}"
+            )
+
+            data = response.json()
+
+            st.write(data)
+
+            if response.status_code == 200:
+
+                if len(data) > 0:
+
+                    st.success("✅ Filter Applied Successfully")
+
+                    df = pd.DataFrame(data)
+
+                    st.dataframe(df)
+
+                else:
+
+                    st.warning("⚠️ No Expenses Found")
+
+            else:
+
+                st.error("❌ Filter Failed")
+
+        except requests.exceptions.ConnectionError:
+
+            st.error("🚫 Unable to connect to FastAPI Server")
+elif opt == "analyze_spending":
+
+    st.header("📊 ANALYZE SPENDING")
+
+    if st.button("Analyze Expenses"):
+
+        try:
+
+            response = requests.get(
+                f"{server_loc}/analyze_exp"
+            )
+
+            data = response.json()
+
+            st.write(data)
+
+            if response.status_code == 200:
+
+                st.success("✅ Expense Analysis Completed")
+
+                # Convert dictionary to dataframe
+                analysis_df = pd.DataFrame(
+                    list(data.items()),
+                    columns=["Category", "Total Amount"]
+                )
+
+                st.dataframe(analysis_df)
+
+                st.bar_chart(
+                    analysis_df.set_index("Category")
+                )
+
+            else:
+
+                st.error("❌ Analysis Failed")
 
         except requests.exceptions.ConnectionError:
 
